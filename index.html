@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Perception Study</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: #555;
+            margin: 30px 0 15px 0;
+            font-size: 22px;
+        }
+        
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            margin: 20px 0;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .question {
+            margin: 25px 0;
+        }
+        
+        .question label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        
+        .likert-scale {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .likert-option {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .likert-option input[type="radio"] {
+            display: none;
+        }
+        
+        .likert-option label {
+            display: block;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .likert-option input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .time-input {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .time-input div {
+            flex: 1;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .progress {
+            background: #f0f0f0;
+            height: 8px;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+        
+        .next-video-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .next-video-btn:hover {
+            background: #45a049;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Consent Screen -->
+        <div id="consent-screen">
+            <h1>Video Perception Study</h1>
+            <p>Welcome! This study examines how interface design affects time perception and user experience.</p>
+            <p><strong>What you'll do:</strong></p>
+            <ul style="margin-left: 20px; color: #666;">
+                <li>Watch a series of short videos (approximately 3 minutes)</li>
+                <li>Answer questions about your experience</li>
+                <li>Provide basic demographic information</li>
+            </ul>
+            <p><strong>Duration:</strong> Approximately 5-7 minutes</p>
+            <p><strong>Data usage:</strong> Your responses will be anonymized and used only for research purposes.</p>
+            <p>By clicking "Start Study", you consent to participate in this research.</p>
+            <button class="button" onclick="startStudy()">Start Study</button>
+        </div>
+
+        <!-- Video Screen -->
+        <div id="video-screen" class="hidden">
+            <div class="timer" id="timer">Time: 0:00</div>
+            <h2 id="video-counter">Video 1 of 8</h2>
+            <div class="video-container">
+                <iframe id="video-player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <button class="next-video-btn hidden" id="next-video-btn" onclick="nextVideo()">Next Video →</button>
+        </div>
+
+        <!-- Questionnaire Screen -->
+        <div id="questionnaire-screen" class="hidden">
+            <h1>Thank you for watching!</h1>
+            <p>Please answer the following questions about your experience.</p>
+            
+            <div class="progress">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+            </div>
+
+            <h2>Time Estimation</h2>
+            <div class="question">
+                <label>1. How long do you think you were watching the videos?</label>
+                <div class="time-input">
+                    <div>
+                        <input type="number" id="est-minutes" placeholder="Minutes" min="0" max="60">
+                    </div>
+                    <div>
+                        <input type="number" id="est-seconds" placeholder="Seconds" min="0" max="59">
+                    </div>
+                </div>
+            </div>
+
+            <h2>Perceived Agency</h2>
+            <div class="question">
+                <label>2. I felt in control of when to stop watching.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q2" id="q2-1" value="1">
+                        <label for="q2-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q2" id="q2-2" value="2">
+                        <label for="q2-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q2" id="q2-3" value="3">
+                        <label for="q2-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q2" id="q2-4" value="4">
+                        <label for="q2-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q2" id="q2-5" value="5">
+                        <label for="q2-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>3. I could easily decide how many videos to watch.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q3" id="q3-1" value="1">
+                        <label for="q3-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q3" id="q3-2" value="2">
+                        <label for="q3-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q3" id="q3-3" value="3">
+                        <label for="q3-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q3" id="q3-4" value="4">
+                        <label for="q3-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q3" id="q3-5" value="5">
+                        <label for="q3-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>4. I felt that the interface respected my choices.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q4" id="q4-1" value="1">
+                        <label for="q4-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q4" id="q4-2" value="2">
+                        <label for="q4-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q4" id="q4-3" value="3">
+                        <label for="q4-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q4" id="q4-4" value="4">
+                        <label for="q4-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q4" id="q4-5" value="5">
+                        <label for="q4-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Frustration</h2>
+            <div class="question">
+                <label>5. The interface was frustrating to use.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q5" id="q5-1" value="1">
+                        <label for="q5-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q5" id="q5-2" value="2">
+                        <label for="q5-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q5" id="q5-3" value="3">
+                        <label for="q5-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q5" id="q5-4" value="4">
+                        <label for="q5-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q5" id="q5-5" value="5">
+                        <label for="q5-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>6. I felt annoyed by the way videos progressed.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q6" id="q6-1" value="1">
+                        <label for="q6-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q6" id="q6-2" value="2">
+                        <label for="q6-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q6" id="q6-3" value="3">
+                        <label for="q6-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q6" id="q6-4" value="4">
+                        <label for="q6-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q6" id="q6-5" value="5">
+                        <label for="q6-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>7. The experience was irritating.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q7" id="q7-1" value="1">
+                        <label for="q7-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q7" id="q7-2" value="2">
+                        <label for="q7-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q7" id="q7-3" value="3">
+                        <label for="q7-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q7" id="q7-4" value="4">
+                        <label for="q7-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q7" id="q7-5" value="5">
+                        <label for="q7-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Satisfaction</h2>
+            <div class="question">
+                <label>8. Overall, I was satisfied with the experience.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q8" id="q8-1" value="1">
+                        <label for="q8-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q8" id="q8-2" value="2">
+                        <label for="q8-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q8" id="q8-3" value="3">
+                        <label for="q8-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q8" id="q8-4" value="4">
+                        <label for="q8-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q8" id="q8-5" value="5">
+                        <label for="q8-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>9. I would use this interface again.</label>
+                <div class="likert-scale">
+                    <div class="likert-option">
+                        <input type="radio" name="q9" id="q9-1" value="1">
+                        <label for="q9-1">1<br>Strongly Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q9" id="q9-2" value="2">
+                        <label for="q9-2">2<br>Disagree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q9" id="q9-3" value="3">
+                        <label for="q9-3">3<br>Neutral</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q9" id="q9-4" value="4">
+                        <label for="q9-4">4<br>Agree</label>
+                    </div>
+                    <div class="likert-option">
+                        <input type="radio" name="q9" id="q9-5" value="5">
+                        <label for="q9-5">5<br>Strongly Agree</label>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Demographics</h2>
+            <div class="question">
+                <label>10. Age:</label>
+                <input type="number" id="age" placeholder="Your age" min="16" max="100">
+            </div>
+
+            <div class="question">
+                <label>11. Gender:</label>
+                <select id="gender">
+                    <option value="">Please select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                </select>
+            </div>
+
+            <div class="question">
+                <label>12. How many hours per day do you typically spend on social media?</label>
+                <select id="social-media">
+                    <option value="">Please select</option>
+                    <option value="less-than-1">Less than 1 hour</option>
+                    <option value="1-2">1-2 hours</option>
+                    <option value="2-3">2-3 hours</option>
+                    <option value="3-4">3-4 hours</option>
+                    <option value="more-than-4">More than 4 hours</option>
+                </select>
+            </div>
+
+            <button class="button" onclick="submitQuestionnaire()">Submit Responses</button>
+            <div id="status-message" class="hidden"></div>
+        </div>
+
+        <!-- Thank You Screen -->
+        <div id="thankyou-screen" class="hidden">
+            <h1>Thank you for participating!</h1>
+            <p>Your responses have been recorded successfully.</p>
+            <p><strong>Study ID:</strong> <span id="study-id"></span></p>
+            <p><strong>Condition:</strong> <span id="condition-display"></span></p>
+            <p style="margin-top: 20px; color: #666;">You can now close this window.</p>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - EDIT THESE VALUES
+        // ============================================
+        
+        // IMPORTANT: Replace with your Google Apps Script Web App URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+        
+        const VIDEO_DURATION = 180; // 3 minutes in seconds
+        const TOTAL_VIDEOS = 8;
+        
+        // YouTube Video IDs (REPLACE THESE WITH ACTUAL VIDEO IDs)
+        const videoIDs = [
+            "dQw4w9WgXcQ", // Replace with actual video ID
+            "9bZkp7q19f0", // Replace with actual video ID
+            "3JZ_D3ELwOQ", // Replace with actual video ID
+            "2Vv-BfVoq4g", // Replace with actual video ID
+            "kXYiU_JCYtU", // Replace with actual video ID
+            "L_jWHffIx5E", // Replace with actual video ID
+            "dMH0bHeiRNg", // Replace with actual video ID
+            "fJ9rUzIMcZQ"  // Replace with actual video ID
+        ];
+
+        // ============================================
+        // EXPERIMENT STATE
+        // ============================================
+        
+        let experimentData = {
+            studyId: '',
+            condition: '',
+            startTime: null,
+            endTime: null,
+            actualDuration: 0,
+            currentVideo: 0,
+            videosWatched: 0,
+            responses: {}
+        };
+
+        let timerInterval;
+        let elapsedSeconds = 0;
+
+        // ============================================
+        // EXPERIMENT FUNCTIONS
+        // ============================================
+
+        function startStudy() {
+            // Random assignment to condition
+            experimentData.condition = Math.random() < 0.5 ? 'autoplay' : 'manual';
+            experimentData.studyId = 'P' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            experimentData.startTime = new Date();
+
+            // Hide consent, show video screen
+            document.getElementById('consent-screen').classList.add('hidden');
+            document.getElementById('video-screen').classList.remove('hidden');
+
+            // Start timer
+            startTimer();
+
+            // Load first video
+            loadVideo(0);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                elapsedSeconds++;
+                const minutes = Math.floor(elapsedSeconds / 60);
+                const seconds = elapsedSeconds % 60;
+                document.getElementById('timer').textContent = 
+                    `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                // Auto-advance to questionnaire after VIDEO_DURATION
+                if (elapsedSeconds >= VIDEO_DURATION) {
+                    finishExperiment();
+                }
+            }, 1000);
+        }
+
+        function loadVideo(index) {
+            if (index >= TOTAL_VIDEOS) {
+                finishExperiment();
+                return;
+            }
+
+            experimentData.currentVideo = index;
+            document.getElementById('video-counter').textContent = 
+                `Video ${index + 1} of ${TOTAL_VIDEOS}`;
+
+            const videoId = videoIDs[index % videoIDs.length];
+            const player = document.getElementById('video-player');
+            
+            // Set video source
+            if (experimentData.condition === 'autoplay') {
+                // Autoplay condition: video plays automatically
+                player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
+                document.getElementById('next-video-btn').classList.add('hidden');
+                
+                // Auto-advance after video duration (approximate)
+                setTimeout(() => {
+                    if (elapsedSeconds < VIDEO_DURATION) {
+                        nextVideo();
+                    }
+                }, 20000); // 20 seconds per video
+            } else {
+                // Manual condition: user must click to advance
+                player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
+                document.getElementById('next-video-btn').classList.remove('hidden');
+            }
+
+            experimentData.videosWatched++;
+        }
+
+        function nextVideo() {
+            loadVideo(experimentData.currentVideo + 1);
+        }
+
+        function finishExperiment() {
+            clearInterval(timerInterval);
+            experimentData.endTime = new Date();
+            experimentData.actualDuration = (experimentData.endTime - experimentData.startTime) / 1000;
+
+            // Hide video screen, show questionnaire
+            document.getElementById('video-screen').classList.add('hidden');
+            document.getElementById('questionnaire-screen').classList.remove('hidden');
+        }
+
+        async function submitQuestionnaire() {
+            // Show loading message
+            showStatus('Saving your responses...', 'loading');
+            
+            // Disable submit button
+            const submitBtn = document.querySelector('#questionnaire-screen button');
+            submitBtn.disabled = true;
+
+            // Collect responses
+            experimentData.responses = {
+                estMinutes: parseInt(document.getElementById('est-minutes').value) || 0,
+                estSeconds: parseInt(document.getElementById('est-seconds').value) || 0,
+                q2: document.querySelector('input[name="q2"]:checked')?.value || '',
+                q3: document.querySelector('input[name="q3"]:checked')?.value || '',
+                q4: document.querySelector('input[name="q4"]:checked')?.value || '',
+                q5: document.querySelector('input[name="q5"]:checked')?.value || '',
+                q6: document.querySelector('input[name="q6"]:checked')?.value || '',
+                q7: document.querySelector('input[name="q7"]:checked')?.value || '',
+                q8: document.querySelector('input[name="q8"]:checked')?.value || '',
+                q9: document.querySelector('input[name="q9"]:checked')?.value || '',
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                socialMedia: document.getElementById('social-media').value
+            };
+
+            // Calculate estimated time in seconds
+            experimentData.responses.estTotalSeconds = 
+                experimentData.responses.estMinutes * 60 + experimentData.responses.estSeconds;
+
+            // Prepare data for Google Sheets
+            const data = {
+                studyId: experimentData.studyId,
+                condition: experimentData.condition,
+                actualDurationSeconds: Math.round(experimentData.actualDuration),
+                videosWatched: experimentData.videosWatched,
+                estimatedTimeSeconds: experimentData.responses.estTotalSeconds,
+                timeDistortion: experimentData.responses.estTotalSeconds - Math.round(experimentData.actualDuration),
+                agency_q2: experimentData.responses.q2,
+                agency_q3: experimentData.responses.q3,
+                agency_q4: experimentData.responses.q4,
+                frustration_q5: experimentData.responses.q5,
+                frustration_q6: experimentData.responses.q6,
+                frustration_q7: experimentData.responses.q7,
+                satisfaction_q8: experimentData.responses.q8,
+                satisfaction_q9: experimentData.responses.q9,
+                age: experimentData.responses.age,
+                gender: experimentData.responses.gender,
+                socialMedia: experimentData.responses.socialMedia
+            };
+
+            try {
+                // Send data to Google Sheets
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // Show success message
+                showStatus('Data saved successfully!', 'success');
+                
+                // Wait a moment, then show thank you screen
+                setTimeout(() => {
+                    document.getElementById('questionnaire-screen').classList.add('hidden');
+                    document.getElementById('thankyou-screen').classList.remove('hidden');
+                    document.getElementById('study-id').textContent = experimentData.studyId;
+                    document.getElementById('condition-display').textContent = 
+                        experimentData.condition === 'autoplay' ? 'Autoplay (Condition A)' : 'Manual Click (Condition B)';
+                }, 1500);
+
+            } catch(error) {
+                console.error('Error saving data:', error);
+                showStatus('Error saving data. Please try again.', 'error');
+                submitBtn.disabled = false;
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
